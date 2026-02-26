@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breath Line - Support Mail</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <style>
+      @media screen and (max-width: 600px) {
+            table.content-table {
+                width: 100% !important;
+                box-shadow: none !important;
+            }
+            table.user-details-table {
+                max-width: 100% !important;
+            }
+      }
+    </style>
+</head>
+<body>
+<div style="margin: 0; padding: 0; background-color: #ffffff; height: 100%;">
+    <table role="presentation" height="100%" cellspacing="0" cellpadding="0" border="0" align="center" style="width: 100%; height: 100%; vertical-align: middle; text-align: left;">
+        <tr>
+            <td align="center" valign="middle">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="content-table" style="font-family: Arial, sans-serif; color: #333333; font-size: 14px; background-color: #f0f8ff; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); width:600px;">
+                    
+                    <tr>
+                        <td style="text-align: center; padding: 20px 0; border-bottom: 2px solid rgba(215, 196, 228, 0.3);">
+                            <img src="{{ context.logo_url }}" alt="Breath Line Logo" style="max-width: 140px; height: auto;">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="background-color: #f0f8ff; padding: 20px; text-align: center;">
+                            <h2 style="font-size: 18px; color: #333; margin-bottom: 15px; text-align: center;">🎉 Subscription Activated</h2>
+                            <p style="font-size: 14px;text-align:center; color: #333;">
+                                Thank you for subscribing to <strong>Breathline</strong>!  
+                                Your subscription is now active
+                            </p>
+                            <p style="font-size: 14px;text-align:center; color: #333;">
+                                If you didn’t activate this subscription, please contact our support team immediately.
+                            </p>
+
+                            <p style="margin-top: 15px;">Thank you for your attention.</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 20px 25px; font-size: 11px; color: #999; font-family: Arial, sans-serif; line-height: 1.4; text-align: center;">
+                            <p style="margin: 0 0 10px 0;">CONFIDENTIALITY NOTICE: This e-mail message, including any attachments, is for the sole use of the intended recipient(s) and may contain confidential and privileged information. You have received it because a user submitted a support request through <strong>Breath Line</strong>. Any unauthorized review, use, disclosure, or distribution is prohibited. If you are not the intended recipient, please contact the sender by reply e-mail and destroy all copies of the original message.</p>
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; color: #888;">
+                                <tr>
+                                    <td style="border-top: 1px solid #d5e9fa; padding-top: 10px; text-align: center;">
+                                        <p style="margin: 0;">Copyright © 2025 Breath Line. All Rights Reserved.</p>
+                                        <p style="margin: 10px 0 0;">
+                                            <a href="{{context.unsubscribe_url}}/{{context.encode_email}}" style="color: #4a266a; text-decoration: underline;">Unsubscribe</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>    
+</body>
+</html>
+

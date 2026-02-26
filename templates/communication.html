@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breath Line - Support Mail</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <style>
+      @media screen and (max-width: 600px) {
+            table.content-table {
+                width: 100% !important;
+                box-shadow: none !important;
+            }
+            table.user-details-table {
+                max-width: 100% !important;
+            }
+      }
+    </style>
+</head>
+<body>
+<div style="margin: 0; padding: 0; background-color: #ffffff; height: 100%;">
+    <table role="presentation" height="100%" cellspacing="0" cellpadding="0" border="0" align="center" style="width: 100%; height: 100%; vertical-align: middle; text-align: left;">
+        <tr>
+            <td align="center" valign="middle">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="content-table" style="font-family: Arial, sans-serif; color: #333333; font-size: 14px; background-color: #f0f8ff; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); width:600px;">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="text-align: center; padding: 20px 0; border-bottom: 2px solid rgba(215, 196, 228, 0.3);">
+                            <img src="{{ context.logo_url }}" alt="Breath Line Logo" style="max-width: 140px; height: auto;">
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 25px; text-align: center;">
+                            <p style="font-size: 16px; line-height: 1.4; text-align: center; margin-top: 0; margin-bottom: 20px;">
+                                Hello Admin,<br>You have received a new support request from <strong>Breathline</strong>.
+                            </p>
+
+                            <!-- User Details Table -->
+                            <table role="presentation" class="user-details-table" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 450px; margin: 0 auto; text-align: left; border: 1px solid #d5e9fa; border-collapse: collapse;">
+                                {% if context.name %}
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; width: 150px; border: 1px solid #d5e9fa; background-color: #e6f2ff;">Name:</td>
+                                    <td style="padding: 8px; border: 1px solid #d5e9fa;">{{ context.name }}</td>
+                                </tr>
+                                {% endif %}
+                                
+                                {% if context.user_email %}
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; width: 150px; border: 1px solid #d5e9fa; background-color: #e6f2ff;">Email:</td>
+                                    <td style="padding: 8px; border: 1px solid #d5e9fa;"><a href="mailto:{{ context.user_email }}" style="color: #007bff; text-decoration: none;">{{ context.user_email }}</a></td>
+                                </tr>
+                                {% endif %}
+
+                                {% if context.phonenumber %}
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; width: 150px; border: 1px solid #d5e9fa; background-color: #e6f2ff;">Phone Number:</td>
+                                    <td style="padding: 8px; border: 1px solid #d5e9fa;">{{ context.phonenumber }}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if context.service_category %}
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; width: 150px; border: 1px solid #d5e9fa; background-color: #e6f2ff;">Service Category:</td>
+                                    <td style="padding: 8px; border: 1px solid #d5e9fa;">{{ context.service_category }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+
+                            {% if context.message %}
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-top: 20px; text-align: center;">
+                                <tr>
+                                    <td>
+                                        <strong style="font-size: 14px;">Message:</strong>
+                                        <p style="margin: 4px auto; white-space: pre-wrap; max-width: 450px; text-align: left;">{{ context.message }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 25px; font-size: 11px; color: #999; font-family: Arial, sans-serif; line-height: 1.4; text-align: center;">
+                            <p style="margin: 0 0 10px 0;">CONFIDENTIALITY NOTICE: This e-mail message, including any attachments, is for the sole use of the intended recipient(s) and may contain confidential and privileged information. You have received it because a user submitted a support request through <strong>Breathline</strong>. Any unauthorized review, use, disclosure, or distribution is prohibited. If you are not the intended recipient, please contact the sender by reply e-mail and and destroy all copies of the original message.</p>
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; text-align: center; color: #888;">
+                                <tr>
+                                    <td style="border-top: 1px solid #d5e9fa; padding-top: 10px;">
+                                        <p style="margin: 0;">Copyright © 2025 Breathline. All Rights Reserved.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>    
+</body>
+</html>
