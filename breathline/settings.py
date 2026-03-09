@@ -2,7 +2,6 @@ import os, dj_database_url, datetime, ast, warnings
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 from django.core.management.utils import get_random_secret_key
-from django.core.validators import URLValidator
 from typing import List, Optional
 
 # Load .env file
@@ -29,10 +28,7 @@ def get_list(value: Optional[str]) -> List[str]:
 # --- Security Settings ---
 # FIX: Fallback key allows Docker build to succeed without ENV vars
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-build-placeholder-key-123')
-
 DEBUG = get_bool_from_env("DEBUG", False)
-
-# In production, this is handled by the Load Balancer DNS
 ALLOWED_HOSTS = get_list(os.environ.get("ALLOWED_HOSTS", "*"))
 
 # --- Application definition ---
@@ -62,7 +58,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # FIX: Crucial for serving CSS/JS
+    # FIX: WhiteNoise MUST be here to serve static files on ECS
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -111,30 +108,31 @@ DATABASES = {
 DATABASE_ROUTERS = ['breathline.database_router.UserBasedRouter']
 
 # --- Static & Media Files ---
-# FIX: WhiteNoise configuration
+# FIX: Aligning with your ECS logs where browser looks for '/staticfiles/'
 STATIC_URL = '/staticfiles/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Enable WhiteNoise compression and caching
+# FIX: Enable WhiteNoise compression and caching for production
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# --- Auth & Internationalization ---
-AUTH_USER_MODEL = "user.Users"
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-APPEND_SLASH = False
+# --- Internationalization ---
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+APPEND_SLASH = False
 
-# --- CORS & DRF Settings ---
+# --- Auth & CORS ---
+AUTH_USER_MODEL = "user.Users"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+# --- REST Framework & JWT ---
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'breathline.exceptions.exceptions.handle_exception',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -149,10 +147,18 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=20),
     'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=50),
-    'SIGNING_KEY': os.environ.get('SECRET_KEY', SECRET_KEY), # Uses placeholder if ENV missing
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': os.environ.get('SECRET_KEY', SECRET_KEY),
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }
 
+# --- Swagger Settings ---
 SWAGGER_SETTINGS = {
     'DEFAULT_API_URL': os.environ.get('SWAGGER_DEFAULT_API_URL', ""),
     'USE_SESSION_AUTH': False,
@@ -165,13 +171,21 @@ SWAGGER_SETTINGS = {
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {'format': '{levelname} {asctime} {module} {message}', 'style': '{'},
+    },
     'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose'},
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
+    'loggers': {
+        'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': True},
+    }
 }
+
+# --- Email & Other ---
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
+EMAIL_USE_TLS = get_bool_from_env("EMAIL_USE_TLS", True)
