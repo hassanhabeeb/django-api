@@ -50,16 +50,22 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# --- Static Files Fix ---
+# --- Static Files ---
 STATIC_URL = '/staticfiles/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# CompressedManifestStaticFilesStorage writes a staticfiles.json manifest with
+# content-hashed filenames. WhiteNoise uses this to reliably serve all assets
+# (including drf-yasg / swagger) without 404s or MIME-type mismatches.
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_INDEX_FILE = True
 
-# --- Untrusted Origin (HTTP) Fixes ---
+# --- Security / Proxy / HTTPS ---
+# Set only if your ALB is terminating HTTPS and forwarding X-Forwarded-Proto.
+# If your ALB listener is HTTP-only (port 80), comment this line out.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = False
-SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+SECURE_SSL_REDIRECT = False           # Don't force HTTPS at the app level
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # Suppress COOP header (HTTP ALB)
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
