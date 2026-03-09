@@ -1,6 +1,17 @@
 import os, dj_database_url, ast
 from pathlib import Path
 
+# settings.py additions
+
+# Force WhiteNoise to ignore "untrusted" origins for its own internal checks
+WHITENOISE_ALLOW_ALL_ORIGINS = True
+
+# This helps WhiteNoise determine the correct MIME types
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
+mimetypes.add_type("application/javascript", ".js", True)
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- Security ---
