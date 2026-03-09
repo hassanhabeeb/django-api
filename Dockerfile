@@ -1,36 +1,41 @@
 FROM python:3.11-slim
 
-# Set environment variables
+# ── Environment ──────────────────────────────────────────────────────────────
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Dummy SECRET_KEY only for the build step (collectstatic).
-# The real SECRET_KEY is injected at runtime via ECS task environment variables.
-ENV SECRET_KEY=build-time-dummy-secret-key-not-used-in-prod
+# Dummy values for build-time only (real secrets are injected by ECS at runtime)
+ENV SECRET_KEY=build-time-dummy-key
 ENV DEBUG=False
-ENV DATABASE_URL=sqlite:////tmp/build.db
+# Use sqlite so collectstatic doesn't need a real DB connection
+ENV DATABASE_URL=sqlite:////tmp/scratch.db
 
 WORKDIR /app
 
-# Install system dependencies
+# ── System deps ──────────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# ── Python deps ──────────────────────────────────────────────────────────────
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
+# ── App code ─────────────────────────────────────────────────────────────────
 COPY . .
 
-# Collect static files (drf-yasg, admin, etc.)
-# --noinput : non-interactive
-# --clear   : wipe old stale files first
-# No --skip-checks so Django validates apps + finders properly
+# ── Collect static files ─────────────────────────────────────────────────────
+# --noinput   : non-interactive
+# --clear     : remove stale files from a previous build layer
+# No --skip-checks → Django validates all INSTALLED_APPS static finders,
+# ensuring drf-yasg, admin, and every other app is included.
 RUN python manage.py collectstatic --noinput --clear
 
-# Verify drf-yasg static files were collected
-RUN ls /app/staticfiles/drf-yasg/ && echo "✅ drf-yasg statics collected OK"
+# Fail the build explicitly if the key drf-yasg assets are missing
+RUN test -f /app/staticfiles/drf-yasg/style.css \
+    && test -f /app/staticfiles/drf-yasg/swagger-ui-dist/swagger-ui.css \
+    && test -f /app/staticfiles/drf-yasg/swagger-ui-dist/swagger-ui-bundle.js \
+    && echo "✅  drf-yasg static files verified OK" \
+    || (echo "❌  drf-yasg static files MISSING – build failed" && exit 1)
 
+# ── Runtime ──────────────────────────────────────────────────────────────────
 EXPOSE 8000
-
-CMD ["gunicorn", "breathline.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "breathline.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"]
