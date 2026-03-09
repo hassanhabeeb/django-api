@@ -18,6 +18,7 @@ COPY . .
 
 # FIX: Run collectstatic to generate the folder WhiteNoise needs
 RUN python manage.py collectstatic --noinput
+RUN ls -R /app/staticfiles/drf-yasg/
 
 EXPOSE 8000
 
