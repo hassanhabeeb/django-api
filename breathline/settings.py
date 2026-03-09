@@ -11,7 +11,7 @@ load_dotenv(find_dotenv(), override=True, verbose=True)
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Helper functions
+# --- Helper Functions ---
 def get_bool_from_env(name, default_value):
     if name in os.environ:
         value = os.environ[name]
@@ -26,22 +26,16 @@ def get_list(value: Optional[str]) -> List[str]:
         return []
     return [v.strip() for v in value.split(',') if v.strip()]
 
-# Basic Settings
-DEBUG = get_bool_from_env("DEBUG", False)
-SECRET_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY and DEBUG:
-    warnings.warn("SECRET_KEY not configured, using a random temporary key.")
-    SECRET_KEY = get_random_secret_key()
+# --- Security Settings ---
+# FIX: Fallback key allows Docker build to succeed without ENV vars
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-build-placeholder-key-123')
 
+DEBUG = get_bool_from_env("DEBUG", False)
+
+# In production, this is handled by the Load Balancer DNS
 ALLOWED_HOSTS = get_list(os.environ.get("ALLOWED_HOSTS", "*"))
 
-# CORS & CSRF
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = get_list(os.environ.get("CORS_ALLOWED_ORIGINS"))
-CSRF_TRUSTED_ORIGINS = get_list(os.environ.get("CSRF_TRUSTED_ORIGINS"))
-
-# Application definition
+# --- Application definition ---
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,7 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    "corsheaders",
+    'corsheaders',
     'django_acl',
     'encrypted_model_fields',
     # Local Apps
@@ -68,7 +62,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Added for static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # FIX: Crucial for serving CSS/JS
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -99,8 +93,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'breathline.wsgi.application'
 
-# Database Setup
-# FIXED: Added fallback 5432 to prevent 'NoneType' error during Docker Build
+# --- Database ---
+# FIX: Default to 5432 and dummy strings so Docker build doesn't fail
 try:
     database_port = int(os.environ.get('DATABASE_PORT', 5432))
 except (ValueError, TypeError):
@@ -116,8 +110,8 @@ DATABASES = {
 
 DATABASE_ROUTERS = ['breathline.database_router.UserBasedRouter']
 
-# Static & Media Files
-# FIXED: Configured for WhiteNoise
+# --- Static & Media Files ---
+# FIX: WhiteNoise configuration
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
@@ -128,10 +122,18 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Auth & DRF Settings
+# --- Auth & Internationalization ---
 AUTH_USER_MODEL = "user.Users"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 APPEND_SLASH = False
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+# --- CORS & DRF Settings ---
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'breathline.exceptions.exceptions.handle_exception',
@@ -147,11 +149,10 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=20),
     'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=50),
-    'SIGNING_KEY': 'eShVmYq3t6w9z$C&E)H@McQfTjWnZr4u7x!A%D*G-JaNdRgUkXp2s5v8y/B?E(H+',
+    'SIGNING_KEY': os.environ.get('SECRET_KEY', SECRET_KEY), # Uses placeholder if ENV missing
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Swagger Settings
 SWAGGER_SETTINGS = {
     'DEFAULT_API_URL': os.environ.get('SWAGGER_DEFAULT_API_URL', ""),
     'USE_SESSION_AUTH': False,
@@ -160,4 +161,17 @@ SWAGGER_SETTINGS = {
     },
 }
 
-# (Keep your existing Logging and Email configs below)
+# --- Logging ---
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
