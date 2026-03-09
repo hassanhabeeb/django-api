@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
-from django_acl.models import Group
+#from django_acl.models import Group
 from django_acl.utils.helper import acl_has_perms
 from django_acl.models import AbstractDateFieldMix
 from breathline.models import AbstractDateTimeFieldBaseModel
