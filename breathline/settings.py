@@ -57,7 +57,7 @@ MIDDLEWARE = [
 STATIC_URL = '/staticfiles/'
 # Read from env so Dockerfile ENV STATIC_ROOT=/srv/staticfiles is honoured.
 # Default keeps local dev working without setting any env var.
-STATIC_ROOT = os.environ.get('STATIC_ROOT', os.path.join(BASE_DIR, 'staticfiles'))
+STATIC_ROOT = os.environ.get('STATIC_ROOT') or os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # CompressedStaticFilesStorage: serves files at their ORIGINAL paths (no hash

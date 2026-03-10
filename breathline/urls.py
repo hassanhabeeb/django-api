@@ -45,6 +45,9 @@ urlpatterns = [
             path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
         ])),
     ])),
+    
+    # Redirect favicon.ico
+    path('favicon.ico', RedirectView.as_view(url='/staticfiles/favicon.ico', permanent=True)),
 ]
 
 # NOTE: In production with WhiteNoise, static files are served automatically
