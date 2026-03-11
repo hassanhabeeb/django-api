@@ -1,29 +1,22 @@
-#!/bin/bash
+#!/bin/sh
+
+# Exit immediately if a command exits with a non-zero status
 set -e
 
-echo "=========================================="
-echo " Container startup: collecting static files"
-echo "=========================================="
+echo "🚀 Starting Entrypoint Script..."
 
-# Run collectstatic at container start time so static files are ALWAYS
-# present — even if an ECS volume mount shadows what was baked into the image.
-# --skip-checks avoids running DB health checks (DB may not be needed here)
-python manage.py collectstatic --noinput --clear --skip-checks
+echo "📦 Creating migrations..."
+python manage.py makemigrations --noinput
 
-# Sanity check: fail loudly if key drf-yasg assets are still missing
-if [ ! -f "${STATIC_ROOT:-/srv/staticfiles}/drf-yasg/style.css" ]; then
-    echo "ERROR: drf-yasg static files missing after collectstatic — aborting."
-    exit 1
-fi
+echo "📦 Applying database migrations..."
+python manage.py migrate --noinput
 
-echo "✅ Static files ready at ${STATIC_ROOT:-/srv/staticfiles}"
-echo "=========================================="
-echo " Starting Gunicorn"
-echo "=========================================="
+echo "📁 Collecting static files..."
+python manage.py collectstatic --noinput
+
+echo "🚀 Starting Gunicorn..."
 
 exec gunicorn breathline.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 3 \
-    --timeout 120 \
-    --access-logfile - \
-    --error-logfile -
+    --timeout 120
