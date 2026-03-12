@@ -1,0 +1,41 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+build/
+dist/
+
+# --- Django ---
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+/static/
+
+# --- Environment & Secrets ---
+.env
+.flaskenv
+secrets.json
+*.pem
+*.key
+
+# --- Docker ---
+.docker/
+# Optional: if you have local data volumes
+/data/
+
+# --- IDEs / Editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- AWS / Pipeline Artifacts ---
+imagedefinitions.json
+imageDetail.json
+.aws/
