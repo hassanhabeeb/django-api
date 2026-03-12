@@ -3,15 +3,14 @@ FROM python:3.11-slim
 # ── Environment ──────────────────────────────────────────────────────────────
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-# Set the path to the virtual environment
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV STATIC_ROOT=/srv/staticfiles
 
-# Dummy build-time values
+# Dummy build-time values to satisfy Django initialization
 ENV SECRET_KEY=build-time-dummy-key
 ENV DEBUG=False
-# Using a local sqlite for build-time collectstatic to avoid RDS connection
+# Redirecting to local sqlite for build-time only
 ENV DATABASE_URL=sqlite:////tmp/scratch.db 
 
 WORKDIR /app
@@ -22,12 +21,10 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Python venv & deps ───────────────────────────────────────────────────────
-# Create the virtual environment
+# ── Python setup ─────────────────────────────────────────────────────────────
 RUN python -m venv $VIRTUAL_ENV
 
 COPY requirements.txt .
-# Ensure boto3 is present for Secrets Manager logic in settings.py
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir boto3
@@ -35,14 +32,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ── App code ─────────────────────────────────────────────────────────────────
 COPY . .
 
-# ── Collect static files at BUILD time ───────────────────────────────────────
-# We run this inside the venv (inherited from PATH)
+# ── Collect static files ─────────────────────────────────────────────────────
+# We explicitly set the settings module to ensure it picks up our IS_COLLECTSTATIC check
 RUN mkdir -p /srv/staticfiles && \
+    DJANGO_SETTINGS_MODULE=breathline.settings \
     python manage.py collectstatic --noinput --clear --skip-checks && \
     echo "✅ Build-time static collection done"
 
 # ── Entrypoint ───────────────────────────────────────────────────────────────
-# Copy entrypoint from project root to container root
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

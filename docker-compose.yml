@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    # Use the ECR image instead of building locally
+    image: 559307249825.dkr.ecr.ap-south-1.amazonaws.com/django-api:latest
     container_name: django_backend
     restart: always
 
@@ -10,15 +11,20 @@ services:
       - AWS_REGION=ap-south-1
       - SECRET_NAME=breathline/db-credentials
       - PYTHONUNBUFFERED=1
+      # Recommended: Set the static root env var to match the Dockerfile
+      - STATIC_ROOT=/srv/staticfiles
 
     ports:
-      - "8000:8000"
+      - "80:8000"
 
     volumes:
-      - .:/app
-      - static_content:/app/static
+      # We map the volume to the path defined in your Dockerfile/Settings
+      - static_content:/srv/staticfiles
+      # Note: We usually remove the .:/app bind mount in production 
+      # because the code is already baked into the ECR image.
 
-    entrypoint: ["/bin/sh", "/app/entrypoint.sh"]
+    # Ensure the path matches the WORKDIR in your Dockerfile
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
 
 volumes:
   static_content:

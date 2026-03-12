@@ -4,6 +4,7 @@ import ast
 import mimetypes
 import json
 import boto3
+import sys
 from pathlib import Path
 from botocore.exceptions import ClientError
 
@@ -32,9 +33,9 @@ def get_secrets_from_aws():
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
         if 'SecretString' in get_secret_value_response:
             return json.loads(get_secret_value_response['SecretString'])
-    except ClientError as e:
-        # Fallback to console print for debugging during container startup
-        print(f"⚠️ AWS Secrets Manager fetch failed: {e}")
+    except Exception as e:
+        # We catch all exceptions here to prevent build-time crashes
+        print(f"⚠️ AWS Secrets Manager fetch skipped or failed: {e}")
         return None
     return None
 
@@ -72,7 +73,7 @@ INSTALLED_APPS = [
 ]
 
 # ---------------------------------------------------------------------------
-# Middleware (WhiteNoise MUST be immediately after SecurityMiddleware)
+# Middleware
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -87,7 +88,7 @@ MIDDLEWARE = [
 ]
 
 # ---------------------------------------------------------------------------
-# Templates (Fixes admin.E403 Error)
+# Templates
 # ---------------------------------------------------------------------------
 TEMPLATES = [
     {
@@ -106,24 +107,13 @@ TEMPLATES = [
 ]
 
 # ---------------------------------------------------------------------------
-# Static files (WhiteNoise & StaticRoot)
+# Static files (WhiteNoise)
 # ---------------------------------------------------------------------------
 STATIC_URL = '/staticfiles/'
 STATIC_ROOT = os.environ.get('STATIC_ROOT') or os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-
-# Storage logic for drf-yasg compatibility
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 WHITENOISE_ALLOW_ALL_ORIGINS = True
-WHITENOISE_AUTOREFRESH = False
-
-# ---------------------------------------------------------------------------
-# Security / Proxy Settings
-# ---------------------------------------------------------------------------
-SECURE_SSL_REDIRECT = False
-SECURE_CROSS_ORIGIN_OPENER_POLICY = None
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
 
 # ---------------------------------------------------------------------------
 # URLs / WSGI / Auth
@@ -133,14 +123,19 @@ WSGI_APPLICATION = 'breathline.wsgi.application'
 AUTH_USER_MODEL = 'user.Users'
 
 # ---------------------------------------------------------------------------
-# Database (AWS RDS + Secrets Manager)
+# Database Logic (Fixes CodeBuild NoCredentialsError)
 # ---------------------------------------------------------------------------
-aws_db_secrets = get_secrets_from_aws()
+# Detect if we are running 'collectstatic' during Docker build
+IS_COLLECTSTATIC = 'collectstatic' in sys.argv
+
+aws_db_secrets = None
+if not IS_COLLECTSTATIC:
+    aws_db_secrets = get_secrets_from_aws()
 
 if aws_db_secrets:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql', # Change to .mysql if RDS is MySQL
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': aws_db_secrets.get('dbname') or aws_db_secrets.get('dbInstanceIdentifier'),
             'USER': aws_db_secrets.get('username'),
             'PASSWORD': aws_db_secrets.get('password'),
@@ -150,7 +145,7 @@ if aws_db_secrets:
         }
     }
 else:
-    # Fallback for local development or if AWS Secrets fetch fails
+    # Use SQLite for Build-time or if Secrets Manager is unreachable
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite3'),
