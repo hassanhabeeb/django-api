@@ -33,7 +33,6 @@ secrets.json
 .idea/
 *.swp
 *.swo
-.DS_Store
 
 # --- AWS / Pipeline Artifacts ---
 imagedefinitions.json
