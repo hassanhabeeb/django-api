@@ -5,8 +5,7 @@ set -e
 
 echo "🚀 Starting Entrypoint Script..."
 
-echo "📦 Creating migrations..."
-python manage.py makemigrations --noinput
+# REMOVED: makemigrations (This was causing the crash)
 
 echo "📦 Applying database migrations..."
 python manage.py migrate --noinput

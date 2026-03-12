@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    # Use the ECR image instead of building locally
+    # Pulls the latest built image from your AWS ECR
     image: 559307249825.dkr.ecr.ap-south-1.amazonaws.com/django-api:latest
     container_name: django_backend
     restart: always
@@ -11,20 +11,27 @@ services:
       - AWS_REGION=ap-south-1
       - SECRET_NAME=breathline/db-credentials
       - PYTHONUNBUFFERED=1
-      # Recommended: Set the static root env var to match the Dockerfile
       - STATIC_ROOT=/srv/staticfiles
+      - DJANGO_SETTINGS_MODULE=breathline.settings
+      - PYTHONPATH=/app
 
     ports:
       - "80:8000"
 
     volumes:
-      # We map the volume to the path defined in your Dockerfile/Settings
+      # Persistent storage for CSS, JS, and Images
       - static_content:/srv/staticfiles
-      # Note: We usually remove the .:/app bind mount in production 
-      # because the code is already baked into the ECR image.
+      - ./apply_patch.sh:/app/apply_patch.sh
+      - ./custom_migrations:/app/custom_migrations
+      - ./patch_settings.py:/app/breathline/local_settings.py
 
-    # Ensure the path matches the WORKDIR in your Dockerfile
-    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    # COMMAND OVERRIDE: 
+    # This bypasses entrypoint.sh to ensure 'makemigrations' is NEVER called.
+    # It runs migrate, then starts the production server.
+    command: >
+      sh -c "./apply_patch.sh && python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn breathline.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
 
 volumes:
   static_content:
