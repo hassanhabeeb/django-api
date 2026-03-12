@@ -32,20 +32,17 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # After your requirements are installed...
 
 # Copy custom auth migration to the container's django library
-# 1. Copy the folder to a temporary location
-# Patch 1: Django Auth
+# We use a python script to reliably find the site-packages path to avoid bash/venv escaping issues
 COPY custom_migrations/auth/0013_role_permission_label_permission_sub_label.py /tmp/patch_0013.py
-RUN DJANGO_AUTH_PATH=$(python -c "import django.contrib.auth.migrations as m; import os; print(os.path.dirname(m.__file__))") && \
-    cp /tmp/patch_0013.py $DJANGO_AUTH_PATH/0013_role_permission_label_permission_sub_label.py && \
-    ls -l $DJANGO_AUTH_PATH/0013_role_permission_label_permission_sub_label.py && \
-    echo "✅ Auth migration injected"
-
-# Patch 2: Django ACL
 COPY custom_migrations/django_acl/0001_initial.py /tmp/patch_acl.py
-RUN ACL_PATH=$(python -c "import django_acl.migrations as m; import os; print(os.path.dirname(m.__file__))") && \
-    cp /tmp/patch_acl.py $ACL_PATH/0001_initial.py && \
-    ls -l $ACL_PATH/0001_initial.py && \
-    echo "✅ ACL migration injected"
+
+RUN python -c "\
+import os, shutil, django.contrib.auth.migrations as auth_m, django_acl.migrations as acl_m; \
+auth_dir = os.path.dirname(auth_m.__file__); \
+acl_dir = os.path.dirname(acl_m.__file__); \
+shutil.copy('/tmp/patch_0013.py', os.path.join(auth_dir, '0013_role_permission_label_permission_sub_label.py')); \
+shutil.copy('/tmp/patch_acl.py', os.path.join(acl_dir, '0001_initial.py')); \
+print('✅ Auth and ACL migrations injected dynamically.')"
 
 # ── App code ─────────────────────────────────────────────────────────────────
 COPY . .
